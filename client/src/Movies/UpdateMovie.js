@@ -1,16 +1,28 @@
 import React, { useState, useEffect } from 'react';
+import { useParams, useHistory } from 'react-router-dom'
 import axios from 'axios';
 
 const initMovie = {
     title: '',
     director: '',
     metascore: '',
-    stars: []
+    stars: ['']
 }
 
 const UpdateMovie = props => {
     const [ movie, setMovie ] = useState(initMovie)
+    const { push } = useHistory();
+    const { id } = useParams();
 
+    useEffect(()=>{
+        axios
+            .get(`http://localhost:5000/api/movies/${id}`)
+            .then(res =>{
+                // console.log(res)
+                setMovie(res.data)
+            })
+            .catch(err => console.log(err))
+    }, [id])
 
     const changeHandler = ev => {
         ev.persist();
@@ -18,26 +30,31 @@ const UpdateMovie = props => {
         if (ev.target.name === 'metascore') {
           value = parseInt(value, 10);
         }
-
+        if (ev.target.name === 'stars'){
+            value = ev.target.value.split(',')
+        }
         setMovie({
             ...movie,
             [ev.target.name]: value
         });
     };
-
     const handleSubmit = e => {
         e.preventDefault();
         // make a PUT request to edit the item
-        // axios
-        //   .put(`http://localhost:3333/items/${id}`, item)
-        //   .then(res => {
-        //     // res.data
-        //     props.setItems(res.data);
-        //     push(`/item-list/${id}`);
-    
-        //     // res.data ==> just updated item object
-        //   })
-        //   .catch(err => console.log(err));
+        axios
+          .put(`http://localhost:5000/api/movies/${id}`, movie)
+          .then(res => {
+            // res.data
+            const updatedMovie = res.data
+            const newList = props.movieList.filter(movie => movie.id !== updatedMovie.id)
+            props.setMovieList([
+                ...newList,
+                updatedMovie
+            ]);
+            push(`/`);
+            // res.data ==> just updated item object
+          })
+          .catch(err => console.log(err));
     };
 
     return (
@@ -49,7 +66,7 @@ const UpdateMovie = props => {
                 name="title"
                 onChange={changeHandler}
                 placeholder="title"
-                value={movie.name}
+                value={movie.title}
                 />
                 <div className="baseline" />
 
